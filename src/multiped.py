@@ -1,22 +1,21 @@
 #the tracker
 
+import Dataset
+
 class multiped:
-	framePath  = ""
-	startFrame = 0
-	endFrame   = 0
+	dataset = None
 	
-	def __init__(self, fPath, startF, endF):
-		self.framePath  = fPath
-		self.startFrame = startF
-		self.endFrame   = endF
+	def __init__(self, ds):
+		ds.info()
+		self.dataset = ds
 	
 	def info(self):
-		print("The Trackers looks for Frames in Path " + self.framePath)
-		print("With Startframe: " + str(self.startFrame) + " and Endframe: " + str(self.endFrame))
+		return "The Trackers uses the following Dataset: " + self.dataset.info()
 		
 if __name__ == '__main__':
-	thetracker = multiped("c:/herearetheframes/", 1, 1000)
-	thetracker.info()
+	ds = Dataset.Dataset("c:/here_are_the_frames/", 1, 1000)
+	thetracker = multiped(ds)
+	print (thetracker.info())
 	
 	
 	
