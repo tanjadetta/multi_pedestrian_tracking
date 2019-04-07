@@ -1,4 +1,5 @@
 #the tracker
+import cv2
 
 import Dataset
 
@@ -10,10 +11,10 @@ class Multiped:
 		self.dataset = ds
 	
 	def info(self):
-		return "The Trackers uses the following Dataset: " + self.dataset.info()
+		return "The Tracker uses the following Dataset: " + self.dataset.info()
 		
 if __name__ == '__main__':
-	ds = Dataset.Dataset("c:/here_are_the_frames/", 1, 1000)
+	ds = Dataset.Dataset("c:/here_are_the_frames/", "jpg")
 	thetracker = Multiped(ds)
 	print (thetracker.info())
 	
