@@ -2,7 +2,7 @@
 
 import Dataset
 
-class multiped:
+class Multiped:
 	dataset = None
 	
 	def __init__(self, ds):
@@ -14,7 +14,7 @@ class multiped:
 		
 if __name__ == '__main__':
 	ds = Dataset.Dataset("c:/here_are_the_frames/", 1, 1000)
-	thetracker = multiped(ds)
+	thetracker = Multiped(ds)
 	print (thetracker.info())
 	
 	
