@@ -29,6 +29,8 @@ class Vibe:
 		Forground = CountNearSamples >= self.minN
 		return Forground
 	
+	
+	
 	def getModelFromBGPicture(self, im):
 		for n in range(self.N):
 			self.samples[n] = im.copy()
