@@ -1,1 +1,4 @@
 *.pyc
+
+#ignore the notepad++ workspace file
+multi
