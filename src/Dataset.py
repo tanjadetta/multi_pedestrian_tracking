@@ -9,6 +9,7 @@ class Dataset:
 	endFrame   = 0
 	aktuFrameIndex = 0
 	frameList = None
+	imShape = None
 	
 	def __init__(self, path, fileExt):
 		self.path = path
@@ -19,6 +20,15 @@ class Dataset:
 		self.frameCount = 0
 		self.im = None
 		self.frameCount = len(self.frameList)
+		tmpIm = self.getFrame(0)
+		self.imShape = np.shape(tmpIm)
+	
+	def getFrame(self, index):
+		if index < self.frameCount - 1 and index >= 0:
+			d = self.frameList[index]
+			return cv2.imread(d)
+		else:
+			return None
 		
 	def getFilename(self):
 		return os.path.basename(self.aktuFrame)
@@ -30,10 +40,10 @@ class Dataset:
 		"Count " + str(self.frameCount) + " Frames."
 		
 	def getNextFrame(self):
-		if self.aktuFrameIndex < self.frameCount - 1:
-			self.aktuFrameIndex = self.aktuFrameIndex + 1
-			self.aktuFrame = self.frameList[self.aktuFrameIndex]
-			self.im = cv2.imread(self.aktuFrame)
+		self.aktuFrameIndex = self.aktuFrameIndex + 1
+		self.im = self.getFrame(self.aktuFrameIndex)
+		self.aktuFrame = self.frameList[self.aktuFrameIndex]
+		if not (self.im is None):
 			return True
 		else:
 			return False

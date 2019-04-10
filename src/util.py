@@ -39,21 +39,13 @@ def movePicture(im, directionX, directionY):
 		#move it down
 		result[directionY:h,:] = result[0:(h-directionY),:]
 	return result
+
+def clamp(x, a, b):
+	return min(max(x, a), b)
 	
 if __name__ == '__main__':
-	#test BGRtoLAB, LABtoBGR, BGRtoGray
-	im = cv2.imread("C:/here_are_the_frames/bg.png")
-	cv2.imshow("BGR", im)
-	cv2.waitKey()
-	imGray = BGRtoGray(im)
-	cv2.imshow("GRAY", imGray)
-	cv2.waitKey()
-	imLAB = BGRtoLAB(im)
-	im2   = LABtoBGR(imLAB)
-	cv2.imshow("From BGR to LAB to BGR", im2)
-	
 	#test movePicture
-	im = cv2.imread("C:/here_are_the_frames/bg.png")
+	im = cv2.imread("C:/here_are_the_frames/test/001.jpg")
 	moves = [ [0,0], [30,0], [0,30], [-30,0], [0,-30], [30,30], [-30,-30], [30,-30], [-30,30] ]
 	for t in moves:
 		im2 = movePicture(im, *t)

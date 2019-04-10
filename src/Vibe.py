@@ -5,8 +5,8 @@ import util
 import random
 class Vibe:
 	
-	N = 20			#number of samples
-	T = 30			#Threshold 
+	N = 20		#number of samples
+	T = 20			#Threshold 
 	minN = 2		#minimum number of neighbors 
 	updateFactor = 2
 	samples = None	#samples which describe the background
@@ -68,10 +68,8 @@ class Vibe:
 						#do update a neighbor of [x,y]:
 						n = rs.randint(0, self.N - 1)
 						neigh = neighbors[rs.randint(0, 7)]
-						neighY = y + neigh[0]
-						neighX = x + neigh[1]
-						neighX = max(min(0, neighX), self.width - 1)
-						neighY = max(min(0, neighY), self.height - 1)
+						neighY = util.clamp(y + neigh[0], 0, self.height - 1)
+						neighX = util.clamp(x + neigh[1], 0, self.width - 1)
 						self.samples[n, neighY, neighX] = im[y, x]
 						
 	def updateModel2(self, im, forground_mask):
@@ -95,9 +93,13 @@ class Vibe:
 		WMY = []
 		WMX = []
 		for m,y,x in zip(ms,W[0],W[1]):
-			WMY.append(min(max(y + moves[m][0], self.height),0))
-			WMX.append(min(max(x + moves[m][1], self.width), 0))
+			WMY.append(util.clamp(y + moves[m][0], 0, self.height - 1))
+			WMX.append(util.clamp(x + moves[m][1], 0, self.width - 1))
 		self.samples[(ns, WMY, WMX)] = im[(W[0], W[1])]
+		
+		#for i in range(self.N):
+		#	cv2.imshow("S" + str(i), self.samples[i].astype(np.uint8))
+			
 		
 		
 	def getModelFromBGPicture(self, im):
@@ -126,11 +128,18 @@ class Vibe:
 			cv2.putText(self.samples[n], str(n), (0,20), 1, 2, 255)
 			cv2.imshow("Picture", self.samples[n].astype(np.uint8))
 			cv2.waitKey()
-			
+		#for i in range(self.N):
+		#	cv2.imshow("S" + str(i), self.samples[i].astype(np.uint8))
+	
+	#def getBGpictureFromSequenz(ds, numberOfIms, step):
+	#	imStack = np.zeros([numberOfIms, ds.])
+	
 if __name__ == '__main__':
+	path = "c:/here_are_the_frames/"
 	bg = Vibe(640,480,3)
-	ds = Dataset.Dataset("c:/here_are_the_frames/", "jpg")
+	ds = Dataset.Dataset(path, "jpg")
 	bgIm = cv2.imread("c:/here_are_the_frames/bg.jpg")
+	#bgIm = ds.getFrame(0)
 	cv2.imshow("BackgroundPicture", bgIm)
 	bg.getModelFromBGPicture(bgIm)
 	print (ds.info())
@@ -140,11 +149,10 @@ if __name__ == '__main__':
 		im = ds.im
 		cv2.imshow("Picture", im)
 		F = bg.getForegroundMask(im)
-		bg.updateModel(im, F)
+		bg.updateModel2(im, F)
 		cv2.imshow("Forground-Mask", 255*F.astype(np.uint8))
 		taste = cv2.waitKey(20)
 		if taste == 27:
 			break
-		print("c:/here_are_the_frames/bgs1/" + str(ds.getFilename()))
-		cv2.imwrite("c:/here_are_the_frames/bgs1/" + str(ds.getFilename()), 255*F.astype(np.uint8))
+		cv2.imwrite(path + "bgs2_2/" + str(ds.getFilename()), 255*F.astype(np.uint8))
 		i = i + 1
