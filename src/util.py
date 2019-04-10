@@ -17,7 +17,22 @@ def LABtoBGR(im):
 
 def BGRtoGray(im):
 	gray_image = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
+	s = np.shape(gray_image)
+	if len(s) == 2:
+		gray_image = gray_image.reshape(s[0], s[1], 1)
 	return gray_image
+
+def BGRtoHSV(im):
+	hsv_image = cv2.cvtColor(im, cv2.COLOR_BGR2HSV)
+	return hsv_image
+
+def BGRtoH(im):
+	hsv_image = BGRtoHSV(im)
+	h_image = hsv_image[:,:,0]
+	s = np.shape(h_image)
+	if len(s) == 2:
+		h_image = h_image.reshape(s[0], s[1], 1)
+	return h_image
 
 def movePicture(im, directionX, directionY):
 	result = im.copy()
@@ -45,6 +60,10 @@ def clamp(x, a, b):
 	
 if __name__ == '__main__':
 	#test movePicture
+	print(clamp(14, 10,20))
+	print(clamp(4, 10,20))
+	print(clamp(24, 10, 20))
+	
 	im = cv2.imread("C:/here_are_the_frames/test/001.jpg")
 	moves = [ [0,0], [30,0], [0,30], [-30,0], [0,-30], [30,30], [-30,-30], [30,-30], [-30,30] ]
 	for t in moves:

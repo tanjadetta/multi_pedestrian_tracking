@@ -14,7 +14,7 @@ class Vibe:
 	height = 0
 	channels = 0
 	
-	def __init__(self, width, height, channels):
+	def __init__(self, height, width, channels):
 		self.height = height
 		self.width  = width
 		self.channels = channels
@@ -124,23 +124,30 @@ class Vibe:
 		for n in range(self.minN, self.N):
 			self.samples[n] = M[r[n]]
 		
-		for n in range(self.N):
-			cv2.putText(self.samples[n], str(n), (0,20), 1, 2, 255)
-			cv2.imshow("Picture", self.samples[n].astype(np.uint8))
-			cv2.waitKey()
+		#for n in range(self.N):
+		#	cv2.putText(self.samples[n], str(n), (0,20), 1, 2, 255)
+		#	cv2.imshow("Picture", self.samples[n].astype(np.uint8))
+		#	cv2.waitKey()
 		#for i in range(self.N):
 		#	cv2.imshow("S" + str(i), self.samples[i].astype(np.uint8))
 	
-	#def getBGpictureFromSequenz(ds, numberOfIms, step):
-	#	imStack = np.zeros([numberOfIms, ds.])
+	def getBGpictureFromSequenz(self, ds, startFrameIndex, endFrameIndex, step):
+		r = range(startFrameIndex, endFrameIndex, step)
+		numOfIms = len(r)
+		imStack = np.zeros((numOfIms,) + ds.imShape)
+		for z,i in zip(range(numOfIms), r):
+			imStack[z] = ds.getFrame(i)
+		return np.median(imStack, axis = 0)
 	
 if __name__ == '__main__':
 	path = "c:/here_are_the_frames/"
-	bg = Vibe(640,480,3)
 	ds = Dataset.Dataset(path, "jpg")
-	bgIm = cv2.imread("c:/here_are_the_frames/bg.jpg")
+	bg = Vibe(*ds.imShape)
+	#bgIm = cv2.imread("c:/here_are_the_frames/bg.jpg")
 	#bgIm = ds.getFrame(0)
-	cv2.imshow("BackgroundPicture", bgIm)
+	bgIm = bg.getBGpictureFromSequenz(ds, 0, ds.frameCount, 30)
+	cv2.imshow("BackgroundPicture", bgIm.astype(np.uint8))
+	cv2.waitKey()
 	bg.getModelFromBGPicture(bgIm)
 	print (ds.info())
 	i = 0

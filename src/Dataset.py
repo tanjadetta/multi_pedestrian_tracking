@@ -5,11 +5,10 @@ import os
 
 class Dataset:
 	path = ""
-	startFrame = 0
-	endFrame   = 0
 	aktuFrameIndex = 0
 	frameList = None
 	imShape = None
+	frameCount = 0
 	
 	def __init__(self, path, fileExt):
 		self.path = path
