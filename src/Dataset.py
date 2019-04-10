@@ -1,6 +1,7 @@
 import glob
 import numpy as np
 import cv2
+import os
 
 class Dataset:
 	path = ""
@@ -13,12 +14,15 @@ class Dataset:
 		self.path = path
 		self.aktuFrameIndex = -1
 		self.fileExt = fileExt
-		self.frameList = glob.glob(path + "/*." + fileExt)
+		self.frameList = sorted(glob.glob(path + "/*." + fileExt))
 		self.aktuFrame = ""
 		self.frameCount = 0
 		self.im = None
 		self.frameCount = len(self.frameList)
 		
+	def getFilename(self):
+		return os.path.basename(self.aktuFrame)
+	
 	def info(self):
 		return "Dataset with \n" \
 		"path = "       + str(self.path) + "\n"  \
