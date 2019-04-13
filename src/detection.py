@@ -2,6 +2,7 @@ import util
 import Dataset
 import numpy as np
 import cv2
+from math import cos, sin, pi
 
 class Detection:
 	img = None
@@ -11,10 +12,10 @@ class Detection:
 		self.img = im.copy()
 		self.mag, self.ang = util.magAndAngle(self.img)
 		
-	
-	def makeHogs(self, startY, anzY, startX, anzX, numOfCellsY, numOfCellsX):
-		deltaY = anzY / numOfCellsY				#height of one cell
-		deltaX = anzX / numOfCellsX				#width of one cell
+		
+	def makeHogs(self, startY, height, startX, width, numOfCellsY, numOfCellsX):
+		deltaY = height / numOfCellsY				#height of one cell
+		deltaX = width / numOfCellsX				#width of one cell
 		hogs = np.zeros([numOfCellsY, numOfCellsX, 9])
 		for y in range(numOfCellsY):
 			sY = startY + y * deltaY 			
@@ -25,6 +26,7 @@ class Detection:
 				eX = round(sX + deltaX)
 				sX = round(sX)
 				hogs[y,x] = self.makeHog(sY, eY, sX, eX)
+		return hogs
 	
 	def makeHog(self, sY, eY, sX, eX):
 		#calculate the hog of the patch
@@ -50,16 +52,57 @@ class Detection:
 			print(y)
 		print("Summe der Magnituden: ", np.sum(self.mag))
 		return bins
+	
+	def visualHogs(self, startY, height, startX, width, hogs):
+		im2 = im.copy()
+		numOfCellsY, numOfCellsX, _ = np.shape(hogs)
+		deltaY = height / numOfCellsY				#height of one cell
+		deltaX = width / numOfCellsX				#width of one cell
+		
+		for i in range(numOfCellsX):
+			x = int(startX + i * deltaX)
+			cv2.line(im2, (x, startY), (x, startY + height - 1), (0,255,0))
+		
+		for i in range(numOfCellsX):
+			y = int(startY + i * deltaY)
+			cv2.line(im2, (startX, y), (startX + width - 1, y), (0,255,0))
+			
+		for y in range(numOfCellsY):
+			mY = round(startY + y * deltaY + deltaY / 2)			
+			for x in range(numOfCellsX):
 				
+				maxH = np.max(hogs[y, x])
+				if abs(maxH) > 20:
+					winkel = 0
+					for h in hogs[y, x]:
+						mX = round(startX + x * deltaX + deltaX / 2)
+						#0 Grad = y - Achse
+						m = np.matrix([mY, mX]).T
+						w = -winkel / 180 * pi
+						f = h * 0.4 * min(deltaX, deltaY) / maxH
+						v1 = np.matrix([-f, 0, 1]).T
+						v2 = np.matrix([ f, 0, 1]).T
+						
+						M = np.matrix( [ [ cos(w), -sin(w),  m[0] ], \
+										 [ sin(w),  cos(w),  m[1] ],  \
+										 [      0,       0,     1 ]  ])
+						v1 = M*v1
+						v2 = M*v2
+						cv2.line(im2, (int(v1[1]), int(v1[0])), (int(v2[1]), int(v2[0])), (0,0,255))
+						winkel = winkel + 20				
+		return im2
 if __name__ == "__main__":
 	print("Start")
 	ds = Dataset.Dataset("c:/here_are_the_frames", "jpg")
 	im = ds.getFrame(0)
-	im = cv2.imread("c:/here_are_the_frames/test/002.jpg")
+	im = cv2.imread("c:/here_are_the_frames/test/004.jpg")
 	dets = Detection(im)
-	h, w, _ = np.shape(im)
 	#dets.ang = np.array([[80,15,0,175],[20,30,100,105]])
 	#dets.mag = np.array([[4,8,12,16]  ,[0,4,8,12]])
-	bins = dets.makeHogs(0, h, 0, w, 8, 8)
+	h, w, _ = np.shape(im)
+	hogs = dets.makeHogs(0, h, 0, w, 16, 16)
+	imV = dets.visualHogs(0, h, 0, w, hogs)
+	cv2.imshow("Visual", imV)
+	cv2.waitKey()
 	print("OK")
 	
