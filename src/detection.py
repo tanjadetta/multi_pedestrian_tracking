@@ -91,6 +91,26 @@ class Detection:
 						cv2.line(im2, (int(v1[1]), int(v1[0])), (int(v2[1]), int(v2[0])), (0,0,255))
 						winkel = winkel + 20				
 		return im2
+	
+	def blockNormalization(self, hogs, sizeY = 2, sizeX = 2):
+		#moves a sliding box over the hogs and normalizes 
+		numOfCellsY, numOfCellsX, _ = np.shape(hogs)
+		tY = numOfCellsY - sizeY + 1
+		tX = numOfCellsX - sizeX + 1
+		t  = sizeY * sizeX * 9
+		hogs2 = np.zeros([tY * tX * t])
+		i = 0
+		for y in range(tY):
+			for x in range(tX):
+				H = hogs[y:(y + sizeY), x:(x + sizeX), :]
+				m = np.linalg.norm(H)
+				if m > 0.0001:
+					H = (1.0/m) * H
+				H = H.reshape(t)
+				hogs2[(i*t):(i*t + t)] = H
+				i = i + 1
+		return hogs2
+	
 if __name__ == "__main__":
 	print("Start")
 	ds = Dataset.Dataset("c:/here_are_the_frames", "jpg")
@@ -100,9 +120,11 @@ if __name__ == "__main__":
 	#dets.ang = np.array([[80,15,0,175],[20,30,100,105]])
 	#dets.mag = np.array([[4,8,12,16]  ,[0,4,8,12]])
 	h, w, _ = np.shape(im)
-	hogs = dets.makeHogs(0, h, 0, w, 16, 16)
+	hogs = dets.makeHogs(0, h, 0, w, 16, 8)
+	hogs2 = dets.blockNormalization(hogs, 2, 2)
 	imV = dets.visualHogs(0, h, 0, w, hogs)
 	cv2.imshow("Visual", imV)
 	cv2.waitKey()
+	print(np.shape(hogs2))
 	print("OK")
 	
