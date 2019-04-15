@@ -1,5 +1,7 @@
 import numpy as np
 import cv2
+from math import pi
+from Dataset import Dataset
 
 def BGRtoLAB(im):
 	lab_image = cv2.cvtColor(im, cv2.COLOR_BGR2LAB)
@@ -92,6 +94,16 @@ def magAndAngle(im):
 	
 	return M, ang2
 
+def rotatePicture(im, angle, inDegrees = True):
+	s = np.shape(im)[:2]
+	center = np.float32(np.array([s[0] / 2, s[1] / 2]))
+	if inDegrees:
+		a = angle
+	else:
+		a = angle * 180 / pi
+	M = cv2.getRotationMatrix2D(tuple(center), a, 1.0)
+	return cv2.warpAffine(im, M, s, borderMode=cv2.BORDER_TRANSPARENT)
+
 def plotHelper(im, titel, warte=True):
 	ma = np.max(im)
 	mi = np.min(im)
@@ -107,7 +119,17 @@ def plotHelper(im, titel, warte=True):
 	else:
 		cv2.waitKey(10)
 	
+
+def testRotation():
+	ds = Dataset("C:/here_are_the_frames/train", "jpg")
+	while ds.getNextFrame():
+		for angle in range(0,360,20):
+			im2 = rotatePicture(ds.im, angle, True)
+			plotHelper(im2, "rotated")
+	
 if __name__ == '__main__':
+	testRotation()
+	exit()
 	#test magAndAnngle
 	im = cv2.imread("C:/here_are_the_frames/00000002.jpg")
 	mag, angle = magAndAngle(im)
