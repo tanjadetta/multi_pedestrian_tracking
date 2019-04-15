@@ -54,7 +54,7 @@ class Detection:
 		return bins
 	
 	def visualHogs(self, startY, height, startX, width, hogs):
-		im2 = im.copy()
+		im2 = self.img.copy()
 		numOfCellsY, numOfCellsX, _ = np.shape(hogs)
 		deltaY = height / numOfCellsY				#height of one cell
 		deltaX = width / numOfCellsX				#width of one cell
@@ -111,9 +111,43 @@ class Detection:
 				i = i + 1
 		return hogs2
 	
+	@staticmethod
+	def train(ds):
+		C = 1.0
+		gamma = 1.0
+		svm = cv2.ml.SVM_create()
+		svm.setType(cv2.ml.SVM_C_SVC) 
+		svm.setKernel(cv2.ml.SVM_RBF)
+		svm.setC(C)
+		svm.setGamma(gamma)
+		trainData = np.zeros([ds.frameCount, 7*7*4*9])
+		trainLabels = np.zeros([ds.frameCount, 1])
+		i = 0
+		while (ds.getNextFrame()):
+			dets = Detection(ds.im)
+			h, w, _ = np.shape(ds.im)
+			hogs = dets.makeHogs(0, h, 0, w, 8, 8)
+			#util.plotHelper(dets.visualHogs(0, h, 0, w, hogs), "bla", True)
+			v = dets.blockNormalization(hogs, 2, 2)
+			trainData[i] = v
+			if ds.getFilename()[0:3] == "pos":
+				trainLabels[i,0] = 1
+			elif ds.getFilename()[0:3] == "neg":
+				trainLabels[i,0] = 0
+			else:
+				print("Fehler")
+			i = i + 1
+		print(trainLabels)	
+		svm.train(np.float32(trainData), cv2.ml.ROW_SAMPLE, np.int32(trainLabels)) 
+		result = svm.predict(np.float32(trainData))[1]
+		svm.save("model.dat");
+		print("Result:", result)
+		
 if __name__ == "__main__":
 	print("Start")
-	ds = Dataset.Dataset("c:/here_are_the_frames", "jpg")
+	ds = Dataset.Dataset("c:/here_are_the_frames/test", "jpg")
+	Detection.train(ds)
+	exit()
 	im = ds.getFrame(0)
 	im = cv2.imread("c:/here_are_the_frames/test/004.jpg")
 	dets = Detection(im)
