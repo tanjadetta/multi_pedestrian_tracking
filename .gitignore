@@ -1,4 +1,4 @@
 *.pyc
-
+*.dat
 #ignore the notepad++ workspace file
 multi

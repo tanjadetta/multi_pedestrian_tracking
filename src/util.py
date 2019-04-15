@@ -71,9 +71,9 @@ def magAndAngle(im):
 	#cv2.imshow("Sobel y:", gy)
 	mag, angle = cv2.cartToPolar(gx, gy, angleInDegrees=True)
 	angle = angle % 180
-	cv2.imshow("MAG:", mag)
-	cv2.imshow("Angle:", angle)
-	cv2.waitKey()
+	#cv2.imshow("MAG:", mag)
+	#cv2.imshow("Angle:", angle)
+	#cv2.waitKey()
 	print("max,min in angle:", np.max(angle), np.min(angle))
 	print("max,min in mag:", np.max(mag), np.min(mag))
 	#for each pixel chose the channel with the biggest magmitude:

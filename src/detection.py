@@ -3,11 +3,13 @@ import Dataset
 import numpy as np
 import cv2
 from math import cos, sin, pi
+from builtins import staticmethod
 
 class Detection:
 	img = None
 	mag = None
 	ang = None
+	
 	def __init__(self, im):
 		self.img = im.copy()
 		self.mag, self.ang = util.magAndAngle(self.img)
@@ -49,8 +51,8 @@ class Detection:
 					m1 = m - m0
 					bins[b0] += m0
 					bins[b1] += m1
-			print(y)
-		print("Summe der Magnituden: ", np.sum(self.mag))
+			#print(y)
+		#print("Summe der Magnituden: ", np.sum(self.mag))
 		return bins
 	
 	def visualHogs(self, startY, height, startX, width, hogs):
@@ -72,7 +74,7 @@ class Detection:
 			for x in range(numOfCellsX):
 				
 				maxH = np.max(hogs[y, x])
-				if abs(maxH) > 20:
+				if abs(maxH) > 0.01:
 					winkel = 0
 					for h in hogs[y, x]:
 						mX = round(startX + x * deltaX + deltaX / 2)
@@ -111,9 +113,10 @@ class Detection:
 				i = i + 1
 		return hogs2
 	
+	
 	@staticmethod
 	def train(ds):
-		C = 1.0
+		C = 2.0
 		gamma = 1.0
 		svm = cv2.ml.SVM_create()
 		svm.setType(cv2.ml.SVM_C_SVC) 
@@ -127,7 +130,7 @@ class Detection:
 			dets = Detection(ds.im)
 			h, w, _ = np.shape(ds.im)
 			hogs = dets.makeHogs(0, h, 0, w, 8, 8)
-			#util.plotHelper(dets.visualHogs(0, h, 0, w, hogs), "bla", True)
+			util.plotHelper(dets.visualHogs(0, h, 0, w, hogs), "bla", True)
 			v = dets.blockNormalization(hogs, 2, 2)
 			trainData[i] = v
 			if ds.getFilename()[0:3] == "pos":
@@ -135,19 +138,63 @@ class Detection:
 			elif ds.getFilename()[0:3] == "neg":
 				trainLabels[i,0] = 0
 			else:
-				print("Fehler")
+				raise Exception("Picture is not annotated !")
 			i = i + 1
-		print(trainLabels)	
+		#print(trainLabels)	
 		svm.train(np.float32(trainData), cv2.ml.ROW_SAMPLE, np.int32(trainLabels)) 
 		result = svm.predict(np.float32(trainData))[1]
 		svm.save("model.dat");
-		print("Result:", result)
+		#print("Result:", result)
+		print("GT  Predict  Name")
+		for i in range(ds.frameCount):
+			print(trainLabels[i,0], "  ", result[i, 0], " ", ds.getFilename(i) )		
+	
+	@staticmethod
+	def loadSVM(modelPath):
+		return cv2.ml.SVM_load(modelPath)
+	
+	@staticmethod
+	def predict(ds, svm):
+		testData = np.zeros([ds.frameCount, 7*7*4*9])
+		gtLabels = np.zeros([ds.frameCount, 1])
 		
-if __name__ == "__main__":
-	print("Start")
-	ds = Dataset.Dataset("c:/here_are_the_frames/test", "jpg")
+		i = 0
+		while (ds.getNextFrame()):
+			det = Detection(ds.im)
+			h, w, _ = np.shape(ds.im)
+			hogs = det.makeHogs(0, h, 0, w, 8, 8)
+			util.plotHelper(det.visualHogs(0, h, 0, w, hogs), "bla", True)
+			v = det.blockNormalization(hogs, 2, 2)
+			testData[i] = v
+			if ds.getFilename()[0:3] == "pos":
+				gtLabels[i,0] = 1
+			elif ds.getFilename()[0:3] == "neg":
+				gtLabels[i,0] = 0
+			else:
+				print("Fehler")
+			i = i + 1
+		
+		result = svm.predict(np.float32(testData))[1]
+		print("GT  Predict  Name")
+		for i in range(ds.frameCount):
+			print(gtLabels[i,0], "  ", result[i, 0], " ", ds.getFilename(i) )		
+		
+
+def testPredict():
+	ds = Dataset.Dataset("c:/here_are_the_frames/test2", "jpg")
+	svm = Detection.loadSVM("model.dat")
+	Detection.predict(ds, svm)
+
+def testTrain():
+	ds = Dataset.Dataset("c:/here_are_the_frames/train", "jpg")
 	Detection.train(ds)
+	
+if __name__ == "__main__":
+	#testTrain()
+	testPredict()
+	
 	exit()
+	ds = Dataset.Dataset("c:/here_are_the_frames/test", "jpg")
 	im = ds.getFrame(0)
 	im = cv2.imread("c:/here_are_the_frames/test/004.jpg")
 	dets = Detection(im)
@@ -161,4 +208,4 @@ if __name__ == "__main__":
 	cv2.waitKey()
 	print(np.shape(hogs2))
 	print("OK")
-	
+

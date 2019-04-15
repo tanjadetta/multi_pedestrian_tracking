@@ -29,8 +29,12 @@ class Dataset:
 		else:
 			return None
 		
-	def getFilename(self):
-		return os.path.basename(self.aktuFrame)
+	def getFilename(self, i = None):
+		if i is None:
+			return os.path.basename(self.aktuFrame)
+		else:
+			return os.path.basename(self.frameList[i])
+	
 	
 	def info(self):
 		return "Dataset with \n" \
