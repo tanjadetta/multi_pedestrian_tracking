@@ -23,7 +23,7 @@ class Dataset:
 		self.imShape = np.shape(tmpIm)
 	
 	def getFrame(self, index):
-		if index < self.frameCount - 1 and index >= 0:
+		if index < self.frameCount and index >= 0:
 			d = self.frameList[index]
 			return cv2.imread(d)
 		else:
@@ -41,8 +41,8 @@ class Dataset:
 	def getNextFrame(self):
 		self.aktuFrameIndex = self.aktuFrameIndex + 1
 		self.im = self.getFrame(self.aktuFrameIndex)
-		self.aktuFrame = self.frameList[self.aktuFrameIndex]
 		if not (self.im is None):
+			self.aktuFrame = self.frameList[self.aktuFrameIndex]
 			return True
 		else:
 			return False
