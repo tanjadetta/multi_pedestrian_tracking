@@ -138,6 +138,8 @@ def sp(v, w):
 	assert(np.shape(s) == (1, 1))
 	return s[0,0]
 
+def cross2(u,v):
+	return u[0]*v[1] - v[0]*u[1]
 # testet, ob Punkt P auf der gleichen Seite von Strecke AB wie Punkt C liegt:
 #
 #    P
@@ -149,7 +151,7 @@ def sp(v, w):
 #thanks to: http://blackpawn.com/texts/pointinpoly/default.html
 #
 #erwartet p, A, B, C als 3x1 np.arrays 
-def sameSide(P, A, B, C):
+def sameSide3D(P, A, B, C):
 	n1 = np.cross(B - A, P - A)
 	n2 = np.cross(B - A, C - A)
 	if sp(n1, n2) >= 0:  
@@ -157,6 +159,15 @@ def sameSide(P, A, B, C):
 	else: 
 		return False
 
+# testet, ob Punkt P auf der gleichen Seite von Strecke AB wie Punkt C liegt in 2D:
+def sameSide2D(P, A, B, C):
+	s1 = cross2(B - A, P - A)
+	s2 = cross2(B - A, C - A)
+	if s1*s2 >= 0:  
+		return True
+	else: 
+		return False
+	
 # testet, ob P im Dreieck liegt:
 #
 # A------>B
@@ -168,12 +179,26 @@ def sameSide(P, A, B, C):
 #thanks to: http://blackpawn.com/texts/pointinpoly/default.html
 #
 #erwartet P, A, B, C als 3x1 numpy arrays
-def pointInTriangle(P, A, B, C):
-	if sameSide(P, A, B, C):
-		if sameSide(P, B, C, A):
-			if sameSide(P, C, A, B): 
+def pointInTriangle2D(P, A, B, C):
+	if sameSide2D(P, A, B, C):
+		if sameSide2D(P, B, C, A):
+			if sameSide2D(P, C, A, B): 
 				return True
 	return False
+
+#testet, ob p im 4-Eck liegt
+# A-------B
+#  \       \
+#	\  p    \
+#    D-------C
+#erwartet P, A, B, C, D als 3x1 numpy arrays
+def pointIn4Eck(P, A, B, C, D):
+	if pointInTriangle2D(P, A, B, C):
+		return True
+	if pointInTriangle2D(P, C, D, A):
+		return True
+	return False
+			
 
 #---------------------TESTS----------------------------------
 
@@ -184,31 +209,38 @@ def testRotation():
 			im2 = rotatePicture(ds.im, angle, True)
 			plotHelper(im2, "rotated")
 
-def testPointInTri():
+def testPointInTri2():
 	im = np.zeros([200,200], dtype=np.uint8)
-	A = np.array([20, 100, 0]).T	#oben
-	B = np.array([150,199, 0]).T	#unten rechts
-	C = np.array([180, 0, 0]).T		#unten links
+	A = np.array([20, 100]).T	#oben
+	B = np.array([150,199]).T	#unten rechts
+	C = np.array([180, 0]).T		#unten links
 	with Timer.Timer("mmmh"):
 		for y in range(200):
 			for x in range(200):
-				p = np.array([y,x,0]).T
-				if pointInTriangle(p, A, B, C):
+				p = np.array([y,x]).T
+				if pointInTriangle2D(p, A, B, C):
 					im[y,x] = 255
-	t = []
-	with Timer.Timer("mmmh2"):
-		
-		for y in range(200):
-			for x in range(200):
-				p = np.array([y,x,0]).T
-				if pointInTriangle(p, A, B, C):
-					t.append((y,x))
-		im[t] = 255
+	
 	plotHelper(im, "bla")
 	
+def testPointIn4Eck():
+	im = np.zeros([200,200], dtype=np.uint8)
+	A = np.array([20, 100]).T	#oben
+	B = np.array([150,199]).T	#unten rechts
+	C = np.array([180, 0]).T		#unten links
+	D = np.array([10, 10]).T		#oben
+	with Timer.Timer("mmmh"):
+		for y in range(200):
+			for x in range(200):
+				p = np.array([y,x]).T
+				if pointIn4Eck(p, A, B, C, D):
+					im[y,x] = 255
+	plotHelper(im, "bla")
+
 if __name__ == '__main__':
 	#testRotation()
-	testPointInTri()
+	testPointInTri2()
+	testPointIn4Eck()
 	exit()
 	#test magAndAnngle
 	im = cv2.imread("C:/here_are_the_frames/00000002.jpg")
