@@ -2,6 +2,7 @@ import numpy as np
 import cv2
 from math import pi
 from Dataset import Dataset
+import Timer
 
 def BGRtoLAB(im):
 	lab_image = cv2.cvtColor(im, cv2.COLOR_BGR2LAB)
@@ -104,6 +105,8 @@ def rotatePicture(im, angle, inDegrees = True):
 	M = cv2.getRotationMatrix2D(tuple(center), a, 1.0)
 	return cv2.warpAffine(im, M, s, borderMode=cv2.BORDER_TRANSPARENT)
 
+
+
 def plotHelper(im, titel, warte=True):
 	ma = np.max(im)
 	mi = np.min(im)
@@ -120,15 +123,92 @@ def plotHelper(im, titel, warte=True):
 		cv2.waitKey(10)
 	
 
+#berechnet das Skalarprodukt
+def sp(v, w):
+	v2 = np.asmatrix(v)
+	w2 = np.asmatrix(w)
+	#print (np.shape(v2))
+	#print (np.shape(w2))
+	if np.shape(v2)[0] == 1 and np.shape(w2)[0] == 1:
+		s = v2 * w2.T
+	elif np.shape(v2)[1] == 1 and np.shape(w2)[1] == 1:
+		s = v2.T * w2
+	else: 
+		raise NameError('HiThere')
+	assert(np.shape(s) == (1, 1))
+	return s[0,0]
+
+# testet, ob Punkt P auf der gleichen Seite von Strecke AB wie Punkt C liegt:
+#
+#    P
+#
+# A-------B
+#        
+#      C
+#
+#thanks to: http://blackpawn.com/texts/pointinpoly/default.html
+#
+#erwartet p, A, B, C als 3x1 np.arrays 
+def sameSide(P, A, B, C):
+	n1 = np.cross(B - A, P - A)
+	n2 = np.cross(B - A, C - A)
+	if sp(n1, n2) >= 0:  
+		return True
+	else: 
+		return False
+
+# testet, ob P im Dreieck liegt:
+#
+# A------>B
+#  \     /
+#   \ p /
+#    \ /
+#     C
+#
+#thanks to: http://blackpawn.com/texts/pointinpoly/default.html
+#
+#erwartet P, A, B, C als 3x1 numpy arrays
+def pointInTriangle(P, A, B, C):
+	if sameSide(P, A, B, C):
+		if sameSide(P, B, C, A):
+			if sameSide(P, C, A, B): 
+				return True
+	return False
+
+#---------------------TESTS----------------------------------
+
 def testRotation():
 	ds = Dataset("C:/here_are_the_frames/train", "jpg")
 	while ds.getNextFrame():
 		for angle in range(0,360,20):
 			im2 = rotatePicture(ds.im, angle, True)
 			plotHelper(im2, "rotated")
+
+def testPointInTri():
+	im = np.zeros([200,200], dtype=np.uint8)
+	A = np.array([20, 100, 0]).T	#oben
+	B = np.array([150,199, 0]).T	#unten rechts
+	C = np.array([180, 0, 0]).T		#unten links
+	with Timer.Timer("mmmh"):
+		for y in range(200):
+			for x in range(200):
+				p = np.array([y,x,0]).T
+				if pointInTriangle(p, A, B, C):
+					im[y,x] = 255
+	t = []
+	with Timer.Timer("mmmh2"):
+		
+		for y in range(200):
+			for x in range(200):
+				p = np.array([y,x,0]).T
+				if pointInTriangle(p, A, B, C):
+					t.append((y,x))
+		im[t] = 255
+	plotHelper(im, "bla")
 	
 if __name__ == '__main__':
-	testRotation()
+	#testRotation()
+	testPointInTri()
 	exit()
 	#test magAndAnngle
 	im = cv2.imread("C:/here_are_the_frames/00000002.jpg")

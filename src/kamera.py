@@ -2,6 +2,10 @@ import numpy as np
 from xml.dom import minidom
 from math import acos
 from math import copysign
+import util
+import cv2
+import Dataset
+from _testbuffer import staticarray
 
 class kamera:
 	
@@ -259,4 +263,69 @@ class kamera:
 		#print(xproj)
 		w = xproj[2,0]
 		return copysign(1, d)*w / np.linalg.norm(M[2,:])
+	
+	
+	
+	@staticmethod
+	def findHomoOfRectangle(width, height, imagePoints):
+		#width and height are floats 
+		#imagePoints should be have the form 4 x 2 .
+		#Finds the homography between the plane induced of the rectangle in the world
+		#and the image plane where pS are the projected corners of that
+		#rectangle
+		
+		imaPoints = np.float32(imagePoints.copy())
+		wPoints   = np.float32([[0    ,      0] ,
+							    [width,      0], \
+								[0    , height], 
+								[width, height]])
+		
+		H, _ = cv2.findHomography(wPoints, imaPoints, 0) 
+	
+		Probe = H * (np.vstack( (wPoints, np.array([1,1,1,1]).T) )).T.asmatrix()
+		for i in range(4):
+			Probe[0,i] = Probe[0,i] / Probe[2,i]
+			Probe[1,i] = Probe[1,i] / Probe[2,i]
+			Probe[2,i] = Probe[2,i] / Probe[2,i]
+		
+		print("Imapoints:" )
+		print(imaPoints)
+		print("Probe:")
+		print(np.round(Probe.T))
+		
+		return H
+
+	
+	def projectPicture(self, footPoint, width, height):
+		#projects a picture in a vertical to the x-y-plane and 
+		#towards the camera looking rectangle 
+		#onto the image plane
+		#the footPoint should be a 3x1 vector of the form (x,y,z).T 
+		upV = np.matrix([(0,), (0,), (1,)])
+		rightV = self.kamkoord2weltkoord(np.matrix( [(1,), (0,), (0,)] ))
+		print("Norm von rightV", np.linalg.norm(rightV))
+		print("rightV: ", rightV)
+		v1 = footPoint - (height/2.0) * rightV
+		v2 = footPoint + (height/2.0) * rightV
+		v3 = v1 + height * upV
+		v4 = v2 + height * upV
+		imaP1 = self.proj(v1).T
+		imaP2 = self.proj(v2).T
+		imaP3 = self.proj(v3).T
+		imaP4 = self.proj(v4).T
+		imagePoints = np.array( [imaP1, imaP2, imaP3.T, imaP4.T] )
+		H = kamera.findHomoOfRectangle(width, height, imagePoints)
+		return cv2.warpPerspective()						
+	
+def testProjPic():
+	kam = kamera("c:/here_are_the_frames/calibration/iscam2.CALI", "")
+	ds = Dataset.Dataset("c:/here_are_the_frames/", "jpg")
+	ds.getNextFrame()
+	
+	
+
+if __name__ == '__main__':
+	testRotation()
+	exit()
+		
 		
