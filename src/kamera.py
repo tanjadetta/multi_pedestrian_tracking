@@ -6,6 +6,7 @@ import util
 import cv2
 import Dataset
 from _testbuffer import staticarray
+from util import plotHelper
 
 class kamera:
 	
@@ -223,7 +224,7 @@ class kamera:
 		H =  np.hstack( (P[:,0], P[:,2:] )  )
 		return H
 	
-	@staticmethod
+	
 	def kamkoord2weltkoord(self, XK):
 		#Eingabe: Punkt XK in Kamera-Koordinaten 
 		#Ausgabe: Koordinate in Weltkoordinaten
@@ -282,7 +283,7 @@ class kamera:
 		
 		H, _ = cv2.findHomography(wPoints, imaPoints, 0) 
 	
-		Probe = H * (np.vstack( (wPoints, np.array([1,1,1,1]).T) )).T.asmatrix()
+		Probe = H * np.asmatrix((np.hstack( (wPoints, np.matrix([1,1,1,1]).T) )).T)
 		for i in range(4):
 			Probe[0,i] = Probe[0,i] / Probe[2,i]
 			Probe[1,i] = Probe[1,i] / Probe[2,i]
@@ -296,36 +297,65 @@ class kamera:
 		return H
 
 	
-	def projectPicture(self, footPoint, width, height):
+	def projectPicture(self, fp, width, height, srcIm, dstIm):
 		#projects a picture in a vertical to the x-y-plane and 
 		#towards the camera looking rectangle 
 		#onto the image plane
 		#the footPoint should be a 3x1 vector of the form (x,y,z).T 
 		upV = np.matrix([(0,), (0,), (1,)])
-		rightV = self.kamkoord2weltkoord(np.matrix( [(1,), (0,), (0,)] ))
+		rightV = self.kamkoord2weltkoord(np.matrix( [(1,), (0,), (0,)] )) -  self.kamkoord2weltkoord(np.matrix( [(0,), (0,), (0,)] ))
+		#rightV = np.matrix( [(1,), (0,), (0,)] )
+		rightV = (1.0 / np.linalg.norm(rightV)) * rightV
 		print("Norm von rightV", np.linalg.norm(rightV))
 		print("rightV: ", rightV)
-		v1 = footPoint - (height/2.0) * rightV
-		v2 = footPoint + (height/2.0) * rightV
+		v1 = fp - (width/2.0) * rightV
+		v2 = fp + (width/2.0) * rightV
 		v3 = v1 + height * upV
 		v4 = v2 + height * upV
-		imaP1 = self.proj(v1).T
+		imaP1 = self.proj(v1).T	#row-vectors
 		imaP2 = self.proj(v2).T
 		imaP3 = self.proj(v3).T
 		imaP4 = self.proj(v4).T
-		imagePoints = np.array( [imaP1, imaP2, imaP3.T, imaP4.T] )
+		imaPFP = self.proj(fp).T
+		imaPHP = self.proj(fp + upV).T
+		util.plotLine(dstIm, imaPHP, imaPFP)
+		util.plotLine(dstIm, imaP1, imaP2)
+		util.plotCircle(dstIm, 3, (255,255,0), imaP1, imaP2)
+		imagePoints = np.vstack( (imaP1, imaP2, imaP3, imaP4) )
 		H = kamera.findHomoOfRectangle(width, height, imagePoints)
-		return cv2.warpPerspective()						
-	
+		x1,y1,x2,y2 = util.boundingRect(imaP1, imaP2, imaP3, imaP4)
+		util.plotCircle(dstIm, 3, (255,255,0), imaP1, imaP2, imaP3, imaP4)
+		util.plotCircle(dstIm, 5, (255,255,255), imaPFP, imaPHP)
+		util.plotRect(dstIm, x1, y1, x2, y2)
+		x1 = int(x1)
+		x2 = int(x2)
+		y1 = int(y1)
+		y2 = int(y2)
+		imaP1 = np.squeeze(np.asarray(imaP1))
+		imaP2 = np.squeeze(np.asarray(imaP2))
+		imaP3 = np.squeeze(np.asarray(imaP3))
+		imaP4 = np.squeeze(np.asarray(imaP4))
+		for y in range(y1,y2+1):
+			for x in range(x1,x2+1):
+				p = np.array([x,y])
+				if util.pointIn4Eck(p, imaP1, imaP2, imaP4, imaP3):
+					dstIm[y,x,2] = 255
+				
 def testProjPic():
 	kam = kamera("c:/here_are_the_frames/calibration/iscam2.CALI", "")
-	ds = Dataset.Dataset("c:/here_are_the_frames/", "jpg")
-	ds.getNextFrame()
+	dstIm = cv2.imread("c:/here_are_the_frames/00000002.jpg")
+	srcIm = cv2.imread("C:/here_are_the_frames/test2/pos_004.jpg")
+	fp = np.matrix([0,0,0]).T
+	kam.projectPicture(fp, 1, 1, srcIm, dstIm)
+	util.plotHelper(dstIm, "Ziel", False)
+	util.plotHelper(srcIm, "Source")
+	
 	
 	
 
 if __name__ == '__main__':
-	testRotation()
+	testProjPic()
+	#testRotation()
 	exit()
 		
 		

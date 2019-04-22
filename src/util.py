@@ -200,6 +200,38 @@ def pointIn4Eck(P, A, B, C, D):
 	return False
 			
 
+# returns the bounding rectangle of 4 points p1, p2, p3, p4
+def boundingRect(P1,P2,P3,P4):
+	p1 = np.squeeze(np.asarray(P1))
+	p2 = np.squeeze(np.asarray(P2))
+	p3 = np.squeeze(np.asarray(P3))
+	p4 = np.squeeze(np.asarray(P4))
+	minY = min(p1[1], p2[1], p3[1], p4[1])
+	maxY = max(p1[1], p2[1], p3[1], p4[1])
+	minX = min(p1[0], p2[0], p3[0], p4[0])
+	maxX = max(p1[0], p2[0], p3[0], p4[0])
+	return minX, minY, maxX, maxY
+
+# gets a mx1 matrix and returns an integer tuple
+def toIntTuple(x2d):
+	t = np.squeeze(np.asarray(x2d))
+	t = tuple(t.astype(int))
+	return t
+
+def plotCircle(im, r, color, *xy):
+	for p in xy:
+		t = toIntTuple(p)
+		cv2.circle(im, (t[0], t[1]), r, color)
+
+def plotRect(im, x1, y1, x2, y2, color = (128,128,128)):
+	cv2.rectangle(im, ( int(round(x1)), int(round(y1))), 
+				(int(round(x2)), int(round(y2))), 
+				color)
+	
+def plotLine(im, P1, P2):
+	cv2.line(im, toIntTuple(P1), 
+				toIntTuple(P2), 
+				(255,255,0))
 #---------------------TESTS----------------------------------
 
 def testRotation():
@@ -211,9 +243,9 @@ def testRotation():
 
 def testPointInTri2():
 	im = np.zeros([200,200], dtype=np.uint8)
-	A = np.array([20, 100]).T	#oben
-	B = np.array([150,199]).T	#unten rechts
-	C = np.array([180, 0]).T		#unten links
+	A = np.array([100, 20])	#oben
+	B = np.array([199, 150])	#unten rechts
+	C = np.array([0, 180])		#unten links
 	with Timer.Timer("mmmh"):
 		for y in range(200):
 			for x in range(200):
@@ -225,22 +257,34 @@ def testPointInTri2():
 	
 def testPointIn4Eck():
 	im = np.zeros([200,200], dtype=np.uint8)
-	A = np.array([20, 100]).T	#oben
-	B = np.array([150,199]).T	#unten rechts
-	C = np.array([180, 0]).T		#unten links
-	D = np.array([10, 10]).T		#oben
+	A = np.array([100, 20])	 #oben
+	B = np.array([199, 150]) #unten rechts
+	C = np.array([0, 180]) 	#unten links
+	D = np.array([10, 10])	#oben
 	with Timer.Timer("mmmh"):
 		for y in range(200):
 			for x in range(200):
-				p = np.array([y,x]).T
+				p = np.array([x,y]).T
 				if pointIn4Eck(p, A, B, C, D):
 					im[y,x] = 255
 	plotHelper(im, "bla")
 
+def testBoundingRect():
+	im = np.zeros([200,200,3], dtype=np.uint8)
+	A = np.array([100, 20])	#oben
+	B = np.array([199, 150])	#unten rechts
+	C = np.array([0, 180])	#unten links
+	D = np.array([10, 10])
+	plotCircle(im, 3, (255,255,0), A, B, C, D)
+	
+	x1,y1,x2,y2 = boundingRect(A, B, C, D)
+	cv2.rectangle(im, (x1,y1), (x2,y2), (255,0,0))
+	plotHelper(im, "bla")
 if __name__ == '__main__':
 	#testRotation()
 	testPointInTri2()
 	testPointIn4Eck()
+	testBoundingRect()
 	exit()
 	#test magAndAnngle
 	im = cv2.imread("C:/here_are_the_frames/00000002.jpg")
