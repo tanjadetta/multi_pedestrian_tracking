@@ -322,7 +322,9 @@ class kamera:
 		util.plotLine(dstIm, imaP1, imaP2)
 		util.plotCircle(dstIm, 3, (255,255,0), imaP1, imaP2)
 		imagePoints = np.vstack( (imaP1, imaP2, imaP3, imaP4) )
+		wPoints = np.vstack( (v1, v2, v3, v4) )
 		H = kamera.findHomoOfRectangle(width, height, imagePoints)
+		HI = np.linalg.inv(H)
 		x1,y1,x2,y2 = util.boundingRect(imaP1, imaP2, imaP3, imaP4)
 		util.plotCircle(dstIm, 3, (255,255,0), imaP1, imaP2, imaP3, imaP4)
 		util.plotCircle(dstIm, 5, (255,255,255), imaPFP, imaPHP)
@@ -335,18 +337,33 @@ class kamera:
 		imaP2 = np.squeeze(np.asarray(imaP2))
 		imaP3 = np.squeeze(np.asarray(imaP3))
 		imaP4 = np.squeeze(np.asarray(imaP4))
+		h,w,_ = np.shape(srcIm)
+		maxW = 0
+		maxH = 0
 		for y in range(y1,y2+1):
 			for x in range(x1,x2+1):
 				p = np.array([x,y])
 				if util.pointIn4Eck(p, imaP1, imaP2, imaP4, imaP3):
 					dstIm[y,x,2] = 255
+					p = np.matrix([x,y,1.0]).T
+					v = HI * p
+					v = self.unHom(v)
+					u2 = int(v[0] * w / width) 
+					v2 = int(v[1] * h / height)
+					#print(u2,v2)
+					dstIm[y,x] = srcIm[h-v2-1,u2]
+					maxW = max(maxW, u2)
+					maxH = max(maxH, h-v2-1)
+		print("H", H)
+		print("Max: ", maxW, " ", maxH)
+					
 				
 def testProjPic():
 	kam = kamera("c:/here_are_the_frames/calibration/iscam2.CALI", "")
 	dstIm = cv2.imread("c:/here_are_the_frames/00000002.jpg")
-	srcIm = cv2.imread("C:/here_are_the_frames/test2/pos_004.jpg")
-	fp = np.matrix([0,0,0]).T
-	kam.projectPicture(fp, 1, 1, srcIm, dstIm)
+	srcIm = cv2.imread("C:/here_are_the_frames/test2/123.jpg")
+	fp = np.matrix([0,-1,0]).T
+	kam.projectPicture(fp, 0.7, 1.80, srcIm, dstIm)
 	util.plotHelper(dstIm, "Ziel", False)
 	util.plotHelper(srcIm, "Source")
 	
