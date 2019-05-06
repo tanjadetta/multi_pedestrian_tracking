@@ -95,7 +95,7 @@ def magAndAngle(im):
 	
 	return M, ang2
 
-def rotatePicture(im, angle, inDegrees = True):
+def rotatePicture(im, angle, inDegrees = True, bordercolor = None):
 	s = np.shape(im)[:2]
 	center = np.float32(np.array([s[0] / 2, s[1] / 2]))
 	if inDegrees:
@@ -103,7 +103,10 @@ def rotatePicture(im, angle, inDegrees = True):
 	else:
 		a = angle * 180 / pi
 	M = cv2.getRotationMatrix2D(tuple(center), a, 1.0)
-	return cv2.warpAffine(im, M, s, borderMode=cv2.BORDER_TRANSPARENT)
+	if bordercolor == None:
+		return cv2.warpAffine(im, M, s, borderMode=cv2.BORDER_TRANSPARENT)
+	else:
+		return cv2.warpAffine(im, M, s, borderValue = bordercolor)
 
 
 
