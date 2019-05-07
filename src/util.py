@@ -110,7 +110,7 @@ def rotatePicture(im, angle, inDegrees = True, bordercolor = None):
 
 
 
-def plotHelper(im, titel, warte=True):
+def plotHelper(im, titel="BlaBla", warte=True):
 	ma = np.max(im)
 	mi = np.min(im)
 	r = ma - mi

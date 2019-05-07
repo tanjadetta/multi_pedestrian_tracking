@@ -7,10 +7,12 @@ import util
 import detection
 import kamera
 import Dataset
+import os
+import glob
+from numpy.random.mtrand import randint
+from util import plotHelper
 
-def makeManyTrainPics():
-	srcPath = "../data/circles/train/"
-	dstPath = "../data/circles/train/many/"
+def makeManyTrainPics(srcPath, dstPath):
 	pos = 0
 	neg = 0
 	dataS = Dataset.Dataset(srcPath, "jpg")
@@ -32,7 +34,33 @@ def makeManyTrainPics():
 		else:
 			raise RuntimeError("File " + str(dataS.getFilename()) +  " is neither pos nor neg !?")
 			
+
+
+def projectTestsOnFrame():
+	#srcPath = "../data/circles/test/"
+	#dstPath = "../data/circles/test/many/"
+	#for d in glob.glob(dstPath + "*.jpg"):
+	#	print ("Loesche: " + d) 
+	#	os.remove(d)
+	#makeManyTrainPics(srcPath, dstPath)
+	cam = kamera.kamera("../data/calibration/iscam2.cali", "")
+	dstPath = "C:/here_are_the_frames/00000002.jpg"
+	dstIm = cv2.imread(dstPath)
+	testCount = 5
+	srcPath = "../data/circles/test/many/"
+	ds = Dataset.Dataset(srcPath, "jpg")
+	r = np.random.randint(0, ds.frameCount, testCount)
+	dstH, dstW, _ = np.shape(dstIm) 
+	for i in range(testCount):
+		srcIm = ds.getFrame(r[i])
+		util.plotHelper(srcIm, "bla_" + str(i), False)
+		fpUV = np.matrix([(dstW-100) * np.random.rand() + 50, 
+					      (dstH-100) * np.random.rand() + 50]).T
+		fp = cam.unproj(fpUV)
+		cam.projectPicture(fp, 1, 1, srcIm, dstIm)
+	util.plotHelper(dstIm)	
 		
 		
 if __name__ == '__main__':
-	makeManyTrainPics()
+	#makeManyTrainPics()
+	projectTestsOnFrame()

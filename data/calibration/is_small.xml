@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Camera name="is_cam_small">
+	<Geometry width="640" height="480" ncx="0.0" nfx="0.0" dpx="0.0089" dpy="0.0089"/>
+	<Intrinsic focal="6.5" kappa1="0" cx="320" cy="240" sx="1.0"/>
+	<Extrinsic tx="0" ty="2822" tz="1257" rx="2.0" ry="0.0" rz="0.0"/>
+</Camera>
