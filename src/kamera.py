@@ -340,6 +340,11 @@ class kamera:
 		h,w,_ = np.shape(srcIm)
 		maxW = 0
 		maxH = 0
+		dstH, dstW, _ = np.shape(dstIm)
+		y1 = util.clamp(y1, 0, dstH - 1)
+		y2 = util.clamp(y2, 0, dstH - 1)
+		x1 = util.clamp(x1, 0, dstW - 1)
+		x2 = util.clamp(x2, 0, dstW - 1)
 		for y in range(y1,y2+1):
 			for x in range(x1,x2+1):
 				p = np.array([x,y])

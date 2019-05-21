@@ -9,13 +9,20 @@ class Detection:
 	img = None
 	mag = None
 	ang = None
+	maske = None
 	
-	def __init__(self, im):
+	def __init__(self, im, maske):
 		self.img = im.copy()
 		self.mag, self.ang = util.magAndAngle(self.img)
+		self.maske = maske
 		
 		
 	def makeHogs(self, startY, height, startX, width, numOfCellsY, numOfCellsX):
+		self.displayBild = self.mag.copy()
+		self.startY = startY
+		self.height = height
+		self.startX = startX
+		self.width = width
 		deltaY = height / numOfCellsY				#height of one cell
 		deltaX = width / numOfCellsX				#width of one cell
 		hogs = np.zeros([numOfCellsY, numOfCellsX, 9])
@@ -28,13 +35,24 @@ class Detection:
 				eX = round(sX + deltaX)
 				sX = round(sX)
 				hogs[y,x] = self.makeHog(sY, eY, sX, eX)
+		util.plotHelper(self.displayBild, warte=False)
 		return hogs
 	
 	def makeHog(self, sY, eY, sX, eX):
 		#calculate the hog of the patch
 		bins = np.zeros(9)
+		maskHeight = np.shape(self.maske)[0]
+		maskWidth = np.shape(self.maske)[1]
+		patchHeight = self.height
+		patchWidth = self.width
 		for y in range(sY, eY):
+			my = int((y - self.startY) / patchHeight * maskHeight)
 			for x in range(sX, eX):
+				mx = int((x - self.startX) /  patchWidth * maskWidth)
+				if self.maske[my, mx, 0] < 128:
+					self.displayBild[y,x] = 0
+					continue
+					
 				m = self.mag[y, x]
 				if m > 0.0001:
 					a = self.ang[y, x]
@@ -117,19 +135,19 @@ class Detection:
 	@staticmethod
 	def train(ds):
 		C = 2.0
-		gamma = 1.0
+		gamma = 2.0
 		svm = cv2.ml.SVM_create()
 		svm.setType(cv2.ml.SVM_C_SVC) 
 		svm.setKernel(cv2.ml.SVM_RBF)
 		svm.setC(C)
 		svm.setGamma(gamma)
-		trainData = np.zeros([ds.frameCount, 7*7*4*9])
+		trainData = np.zeros([ds.frameCount, 3*3*4*9])
 		trainLabels = np.zeros([ds.frameCount, 1])
 		i = 0
 		while (ds.getNextFrame()):
 			dets = Detection(ds.im)
 			h, w, _ = np.shape(ds.im)
-			hogs = dets.makeHogs(0, h, 0, w, 8, 8)
+			hogs = dets.makeHogs(0, h, 0, w, 4, 4)
 			util.plotHelper(dets.visualHogs(0, h, 0, w, hogs), "bla", True)
 			v = dets.blockNormalization(hogs, 2, 2)
 			trainData[i] = v
@@ -147,22 +165,23 @@ class Detection:
 		#print("Result:", result)
 		print("GT  Predict  Name")
 		for i in range(ds.frameCount):
-			print(trainLabels[i,0], "  ", result[i, 0], " ", ds.getFilename(i) )		
+			print(trainLabels[i,0], "  ", result[i, 0], " ", ds.getFilename(i) )
+		return svm		
 	
 	@staticmethod
 	def loadSVM(modelPath):
 		return cv2.ml.SVM_load(modelPath)
 	
 	@staticmethod
-	def predict(ds, svm):
-		testData = np.zeros([ds.frameCount, 7*7*4*9])
+	def predict(ds, svm, maske):
+		testData = np.zeros([ds.frameCount, 3*3*4*9])
 		gtLabels = np.zeros([ds.frameCount, 1])
 		
 		i = 0
 		while (ds.getNextFrame()):
-			det = Detection(ds.im)
+			det = Detection(ds.im, maske)
 			h, w, _ = np.shape(ds.im)
-			hogs = det.makeHogs(0, h, 0, w, 8, 8)
+			hogs = det.makeHogs(0, h, 0, w, 4, 4)
 			util.plotHelper(det.visualHogs(0, h, 0, w, hogs), "bla", True)
 			v = det.blockNormalization(hogs, 2, 2)
 			testData[i] = v
@@ -181,13 +200,17 @@ class Detection:
 		
 
 def testPredict():
-	ds = Dataset.Dataset("c:/here_are_the_frames/test2", "jpg")
-	svm = Detection.loadSVM("model.dat")
-	Detection.predict(ds, svm)
+	#ds = Dataset.Dataset("c:/here_are_the_frames/test2", "jpg")
+	maske = cv2.imread("../data/circles/maske.jpg")
+	ds = Dataset.Dataset("../data/circles/test/", "jpg")
+	svm = Detection.loadSVM("model.dat")                                  
+	Detection.predict(ds, svm, maske)
 
 def testTrain():
-	ds = Dataset.Dataset("c:/here_are_the_frames/train", "jpg")
-	Detection.train(ds)
+	ds = Dataset.Dataset("../data/circles/train/many", "jpg")
+	svm = Detection.train(ds)
+	ds = Dataset.Dataset("../data/circles/train/", "jpg")
+	Detection.predict(ds , svm)
 	
 if __name__ == "__main__":
 	#testTrain()
